@@ -25,7 +25,12 @@ export default {
     elementDistance: {
       type: Number,
       default: 0
+    },
+    isSmoothScroll: {
+      type: Boolean,
+      default: true
     }
+
   },
   data () {
     return {
@@ -124,7 +129,6 @@ export default {
       const me = this
       // 解绑滚动事件
       window.removeEventListener('scroll', me.scrollListener)
-      window.cancelAnimationFrame(me.animationFrameFlag)
       // clearInterval(me.timer)
       this.activeIndex = index
       let e = this.panes[index]
@@ -132,7 +136,12 @@ export default {
       let h = me.getPosition(f)
       console.log(h)
       const newScrollTop = me.getPosition(this.panes[index].$refs.content).top - this.distance
-      window.requestAnimationFrame(() => { me.smoothScroll(newScrollTop) })
+      if (me.isSmoothScroll) {
+        me.smoothScroll(newScrollTop)
+      } else {
+        window.scrollTo(0, newScrollTop)
+        window.addEventListener('scroll', me.scrollListener)
+      }
       //   me.timer = setInterval(() => {
       //     let flag = me.isHandScroll()
       //     console.log('aaa')
@@ -226,10 +235,10 @@ export default {
                 background-color: #eeeeee;
             }
         }
-		.active {
-		    color: #fff;
-		    background-color: #eeeeee;
-		}
+        .active {
+            color: #fff;
+            background-color: #eeeeee;
+        }
     }
     .affix-top {
         position: static;

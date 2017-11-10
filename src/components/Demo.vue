@@ -70,13 +70,13 @@ export default {
     affixPane,
     affix
   },
-  data() {
+  data () {
     return {
       maxtop: 20,
       distance: 20
     }
   },
-  mounted: function() {
+  mounted: function () {
     this.$nextTick(() => {})
   }
 }

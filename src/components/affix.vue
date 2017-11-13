@@ -129,6 +129,10 @@ export default {
       const me = this
       // 解绑滚动事件
       window.removeEventListener('scroll', me.scrollListener)
+      // 如果还没滚到目标位置重新进行点击
+      if (me.animationFrameFlag) {
+        window.cancelAnimationFrame(me.animationFrameFlag)
+      }
       // clearInterval(me.timer)
       this.activeIndex = index
       let e = this.panes[index]
@@ -169,23 +173,17 @@ export default {
       const me = this
       let top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
       console.log('aaa')
-      if (Math.abs(top - target) <= 5) {
-        console.log('aaa')
+      if (top <= target) {
+        window.scrollTo(0, top + 50)
+        // me.panes[index].$refs.content.offsetTop
+      } else if (top > target) {
+        window.scrollTo(0, top - 50)
+      }
+      if (Math.abs(top - target) > 50) {
+        me.animationFrameFlag = window.requestAnimationFrame(() => { me.smoothScroll(target) })
+      } else {
         window.cancelAnimationFrame(me.animationFrameFlag)
         window.addEventListener('scroll', me.scrollListener)
-      } else {
-        if (top <= target) {
-          window.scrollTo(0, top + 15)
-          // me.panes[index].$refs.content.offsetTop
-        } else if (top > target) {
-          window.scrollTo(0, top - 15)
-        }
-        if (Math.abs(top - target) > 15) {
-          me.animationFrameFlag = window.requestAnimationFrame(() => { me.smoothScroll(target) })
-        } else {
-          window.cancelAnimationFrame(me.animationFrameFlag)
-          window.addEventListener('scroll', me.scrollListener)
-        }
       }
     }
   },

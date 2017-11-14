@@ -129,61 +129,44 @@ export default {
       const me = this
       // 解绑滚动事件
       window.removeEventListener('scroll', me.scrollListener)
-      // 如果还没滚到目标位置重新进行点击
+      // 适应还没滚到目标位置就重新进行点击的情况
       if (me.animationFrameFlag) {
         window.cancelAnimationFrame(me.animationFrameFlag)
       }
       // clearInterval(me.timer)
       this.activeIndex = index
-      let e = this.panes[index]
-      let f = e.$refs.content
-      let h = me.getPosition(f)
-      console.log(h)
-      const newScrollTop = me.getPosition(this.panes[index].$refs.content).top - this.distance
+      // 此处暴露一个点击事件
+      this.$emit('click-prescroll', index)
+      const newScrollTop = Math.round(me.getPosition(this.panes[index].$refs.content).top - this.distance)
       if (me.isSmoothScroll) {
-        me.smoothScroll(newScrollTop)
+        me.smoothScroll(newScrollTop, index)
       } else {
         window.scrollTo(0, newScrollTop)
         window.addEventListener('scroll', me.scrollListener)
+        // 此处暴露一个点击事件
+        this.$emit('click-afterscroll', index)
       }
-      //   me.timer = setInterval(() => {
-      //     let flag = me.isHandScroll()
-      //     console.log('aaa')
-      //     // 判断滑动过程中是否有手动滑动打断滚动
-      //     if (flag || Math.abs(document.documentElement.scrollTop - newScrollTop) <= 5) {
-      //       console.log('aaa')
-      //       clearInterval(me.timer)
-      //       window.addEventListener('scroll', me.scrollListener)
-      //     } else {
-      //       if (document.documentElement.scrollTop < newScrollTop) {
-      //         document.documentElement.scrollTop += 5
-      //         // me.panes[index].$refs.content.offsetTop
-      //       } else if (document.documentElement.scrollTop > newScrollTop) {
-      //         document.documentElement.scrollTop -= 5
-      //       }
-      //       if (Math.abs(document.documentElement.scrollTop - newScrollTop) < 5) {
-      //         clearInterval(me.timer)
-      //         window.addEventListener('scrolll', me.scrollListener)
-      //       }
-      //     }
-      //   }, 20)
     },
     // 通过requestAnimationFrame实现平滑滚动
-    smoothScroll (target) {
+    smoothScroll (target, index) {
       const me = this
-      let top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
-      console.log('aaa')
-      if (top <= target) {
+      let top = Math.round(document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop)
+      if (target - top > 50) {
         window.scrollTo(0, top + 50)
-        // me.panes[index].$refs.content.offsetTop
-      } else if (top > target) {
+      } else if (top - target > 50) {
         window.scrollTo(0, top - 50)
+      } else {
+        window.scrollTo(0, target)
       }
-      if (Math.abs(top - target) > 50) {
+      if (target !== top) {
         me.animationFrameFlag = window.requestAnimationFrame(() => { me.smoothScroll(target) })
       } else {
         window.cancelAnimationFrame(me.animationFrameFlag)
         window.addEventListener('scroll', me.scrollListener)
+        this.$emit('click-afterscroll', index)
+      }
+      if (!me.isSupportSticky) {
+        me.affixState = me.getAffixState()
       }
     }
   },

@@ -19,19 +19,6 @@ export default {
     }
   },
   methods: {
-    init () {
-      this.contentH = this.$refs.content.clientHeight
-      this.contentH2 = this.$refs.content.scrollHeight
-      this.contentH3 = this.$refs.content.offsetHeight
-      this.scrollTop = document.body.scrollTop
-    },
-    scrollEvent () {
-      const me = this
-      window.addEventListener('scroll', (e) => {
-        me.$nextTick(() => {
-        })
-      })
-    }
   },
   mounted: function () {
     this.$nextTick(() => {

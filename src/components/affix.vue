@@ -1,6 +1,6 @@
 <template lang="html">
 	<div class="affix-container" ref="body">
-		<ul class="affix-nav" :class="affixState" ref="affixNav" :style="{top: initOffsetTop + 'px'}">
+		<ul class="affix-nav" :class="affixState" ref="affixNav" :style="{top: initOffsetTop + 'px', height: affixNavHeight, width: affixNavWidth}">
 			<li v-for="(item, index) in panes" :class="{'active': index === activeIndex}">
 				<a href="javascript:void(0)"
 				@click="handleClick(index)"
@@ -29,8 +29,15 @@ export default {
     isSmoothScroll: {
       type: Boolean,
       default: true
+    },
+    affixNavWidth: {
+      type: String,
+      default: '100%'
+    },
+    affixNavHeight: {
+      type: String,
+      default: '30px'
     }
-
   },
   data () {
     return {
@@ -189,12 +196,9 @@ export default {
 .affix-container {
     position: relative;
     .affix-nav {
-        width: 400px;
-        height: 30px;
         padding: 0;
         margin: 0;
-        border-radius: 4px;
-        border: 1px solid #ddd;
+
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -202,11 +206,24 @@ export default {
         top: 10px;
         background-color: #fff;
         z-index: 999999;
+        li:first-child {
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            border-right: none;
+        }
+        li:last-child {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            border-left: none;
+        }
         li {
             border-right: 1px solid #ddd;
-            width: 33%;
-            display: inline-block;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             height: 100%;
+            border: 1px solid #ddd;
             a {
                 text-decoration: none;
                 color: #337ab7;

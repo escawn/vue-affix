@@ -1,6 +1,6 @@
 <template>
 <div class="demo">
-  <affix :initOffsetTop="maxtop">
+  <affix :initOffsetTop="maxtop" :elementDistance="distance">
     <affix-pane :label="'标签1'">第一部分 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eu sem tempor, varius quNullam hendrerit justo non leo aliquet imperdiet. Etiam in sagittis lectus. Suspendisse ultrices placerat accumsan. Mauris quis dapibus orci. In dapibus velit
       blandit pharetra tincidunt. Quisque non sapien nec lacus condimentum facilisis ut iaculis enim. Sed viverra interdum bibendum. Donec ac sollicitudin dolor. Sed fringilla vitae lacus at rutrum. Phasellus congue vestibulum ligula sed consequat. Vestibulum
       consectetur scelerisque lacus, ac fermentum lorem convallis sed. Nam odio tortor, dictum quis malesuada at, pellentesque vitae orci. Vivamus elementum, felis eu auctor lobortis, diam velit egestas lacus, quis fermentum metus ante quis urna. Sed

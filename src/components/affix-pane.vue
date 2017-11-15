@@ -11,11 +11,6 @@ export default {
   props: ['label'],
   data () {
     return {
-      contentP: {},
-      contentH: '',
-      contentH2: '',
-      contentH3: '',
-      scrollTop: ''
     }
   },
   methods: {

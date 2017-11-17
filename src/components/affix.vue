@@ -1,13 +1,13 @@
 <template lang="html">
-	<div class="affix-container" ref="body">
-		<ul class="affix-nav" :class="affixState" ref="affixNav" :style="{top: initOffsetTop + 'px', height: affixNavHeight, width: affixNavWidth}">
+	<div class="affix-container" ref="affix" :style="overScroll?{overflow: 'scroll'}:''">
+		<ul class="affix-nav" :class="affixState" ref="affixNav" :style="{top: actualOffsetTop + 'px', height: affixNavHeight, width: affixNavWidth}">
 			<li v-for="(item, index) in panes" :class="{'active': index === activeIndex}">
 				<a href="javascript:void(0)"
 				@click="handleClick(index)"
 				>{{item.label}}</a>
 			</li>
 		</ul>
-		<div v-show="affixState === 'affix-ing'" :style="{height: affixHeight + 'px'}"></div>
+		<div v-show="affixState === 'affix-ing'" :style="{height: affixNavHeight }"></div>
 		<div class="affix-content">
 			<slot></slot>
 		</div>
@@ -30,6 +30,10 @@ export default {
       type: Boolean,
       default: true
     },
+    overScroll: {
+      type: Boolean,
+      default: false
+    },
     affixNavWidth: {
       type: String,
       default: '100%'
@@ -46,16 +50,22 @@ export default {
       activeIndex: 0,
       affixState: 'affix-top',
       flag: 0,
-      affixHeight: 0,
       animationFrameFlag: 0,
-      timer: 0
+      timer: 0,
+      affixNavSize: {
+        height: 0,
+        width: 0
+      },
+      affixHeight: 0,
+      container: null,
+      actualOffsetTop: 0
     }
   },
   watch: {},
   computed: {
     distance () {
       // 当正好处于某个content位置时，content应与窗口顶部相隔distance距离，以便留给affix展示
-      return this.initOffsetTop + this.affixHeight + this.elementDistance
+      return this.actualOffsetTop + this.affixNavSize.height + this.elementDistance
     },
     // 判断是否支持sticky属性
     isSupportSticky () {
@@ -95,18 +105,21 @@ export default {
       }
     },
     // 获取Affix状态
-    getAffixState () {
-      // 不同浏览器内核下scrolltop取值方式不同
-      let top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
+    getAffixState (top) {
       if (this.affixState === 'affix-top') {
-        if (this.initOffsetTop !== null && this.$refs.affixNav.getBoundingClientRect().top >= this.initOffsetTop) {
-          return 'affix-top'
-        }
-        return 'affix-ing'
-      } else {
-        if (top <= this.flag) {
+        if (this.actualOffsetTop !== null && this.$refs.affixNav.getBoundingClientRect().top >= this.actualOffsetTop) {
+          console.log('affix-top to affix-top ' + ' nav距窗口距离： ' + this.$refs.affixNav.getBoundingClientRect().top, 'actualOffsetTop: ' + this.actualOffsetTop)
           return 'affix-top'
         } else {
+          console.log('affix-top to affix-ing ' + ' nav距窗口距离： ' + this.$refs.affixNav.getBoundingClientRect().top, 'actualOffsetTop: ' + this.actualOffsetTop)
+          return 'affix-ing'
+        }
+      } else {
+        if (top <= this.flag) {
+          console.log('affix-ing to affix-top ' + ' top： ' + top + ', flag: ' + this.flag)
+          return 'affix-top'
+        } else {
+          console.log('affix-ing to affix-ing ' + ' top： ' + top + ', flag: ' + this.flag)
           return 'affix-ing'
         }
       }
@@ -114,17 +127,22 @@ export default {
     // 监听事件判断
     scrollListener () {
       const me = this
-      // 不同浏览器内核下scrolltop取值方式不同
-      let top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
+      let top
+      if (me.overScroll) {
+        top = me.container.scrollTop
+      } else {
+        // 不同浏览器内核下scrolltop取值方式不同
+        top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
+      }
       me.panes.forEach((item, index) => {
         // 1是affix border的高，border会影响tab之间的切换，待解决
-        if (me.getPosition(item.$refs.content).top - top <= (me.distance) + 1) {
+        if (me.getPosition(item.$refs.content).top - top <= me.distance) {
           me.activeIndex = index
           return
         }
       })
       if (!me.isSupportSticky) {
-        me.affixState = me.getAffixState()
+        me.affixState = me.getAffixState(top)
       }
     },
     // 将affix-pane内容添加进数组
@@ -135,7 +153,7 @@ export default {
     handleClick (index) {
       const me = this
       // 解绑滚动事件
-      window.removeEventListener('scroll', me.scrollListener)
+      me.container.removeEventListener('scroll', me.scrollListener)
       // 适应还没滚到目标位置就重新进行点击的情况
       if (me.animationFrameFlag) {
         window.cancelAnimationFrame(me.animationFrameFlag)
@@ -148,8 +166,8 @@ export default {
       if (me.isSmoothScroll) {
         me.smoothScroll(newScrollTop, index)
       } else {
-        window.scrollTo(0, newScrollTop)
-        window.addEventListener('scroll', me.scrollListener)
+        me.container.scrollTop = newScrollTop
+        me.container.addEventListener('scroll', me.scrollListener)
         // 此处暴露一个点击事件
         this.$emit('click-afterscroll', index)
       }
@@ -157,36 +175,47 @@ export default {
     // 通过requestAnimationFrame实现平滑滚动
     smoothScroll (target, index) {
       const me = this
-      let top = Math.round(document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop)
-      if (target - top > 50) {
-        window.scrollTo(0, top + 50)
-      } else if (top - target > 50) {
-        window.scrollTo(0, top - 50)
+      let top
+      if (me.overScroll) {
+        top = me.container.scrollTop
       } else {
-        window.scrollTo(0, target)
+        // 不同浏览器内核下scrolltop取值方式不同
+        top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
       }
-      if (target !== top) {
+      top = Math.round(top)
+      target = Math.round(target)
+      if (target - top > 50) {
+        me.overScroll ? me.container.scrollTop = top + 50 : window.scrollTo(0, top + 50)
+      } else if (top - target > 50) {
+        me.overScroll ? me.container.scrollTop = top - 50 : window.scrollTo(0, top - 50)
+      } else {
+        me.overScroll ? me.container.scrollTop = target : window.scrollTo(0, target)
+      }
+      if (Math.abs(target - top) > 1) {
         me.animationFrameFlag = window.requestAnimationFrame(() => { me.smoothScroll(target) })
       } else {
         window.cancelAnimationFrame(me.animationFrameFlag)
-        window.addEventListener('scroll', me.scrollListener)
+        me.container.addEventListener('scroll', me.scrollListener)
         this.$emit('click-afterscroll', index)
       }
       if (!me.isSupportSticky) {
-        me.affixState = me.getAffixState()
+        me.affixState = me.getAffixState(top)
       }
     }
   },
   mounted: function () {
     const me = this
     this.$nextTick(() => {
-      me.$children.forEach((item, index) => {
-        me.addPanes(item)
-      })
-      window.addEventListener('scroll', me.scrollListener)
+      me.affixNavSize = {
+        height: me.$refs.affixNav.offsetHeight,
+        width: me.$refs.affixNav.offsetWidth
+      }
+      me.affixHeight = me.$refs.affix.offsetHeight
+      me.container = me.overScroll ? me.$refs.affix : window
+      me.container.addEventListener('scroll', me.scrollListener)
+      me.actualOffsetTop = me.overScroll ? Math.min((me.getPosition(me.$refs.affixNav).top), (me.initOffsetTop + me.getPosition(me.$refs.affix).top)) : Math.min(me.initOffsetTop, me.getPosition(me.$refs.affixNav).top)
       // flag为到达刚好从affix-top转变为affix时，滚动条卷去的距离
-      me.flag = me.getPosition(me.$refs.affixNav).top - me.initOffsetTop
-      me.affixHeight = me.$refs.affixNav.offsetHeight
+      me.flag = me.getPosition(me.$refs.affixNav).top - me.actualOffsetTop
     })
   }
 }

@@ -10,13 +10,13 @@ export default {
   name: 'affixPane',
   props: ['label'],
   data () {
-    return {
-    }
+    return {}
   },
-  methods: {
-  },
+  methods: {},
   mounted: function () {
-    this.$nextTick(() => {
+    const me = this
+    me.$nextTick(() => {
+      me.$parent.addPanes(me)
     })
   }
 }

@@ -2,7 +2,7 @@
 	<div class="affix-container" ref="affix" :style="overScroll?{overflow: 'scroll'}:''">
 				<ul class="affix-nav" :class="affixState" ref="affixNav" :style="{top: actualOffsetTop + 'px', height: affixNavHeight, width: affixNavWidth}">
 					<li v-if="pure">
-						<a href="javascript:void(0)" @click="handleClick"><slot></slot></a>
+						<a href="javascript:void(0)" @click="handleClick"><slot name="affix-content"></slot></a>
 					</li>
 					<li v-for="(item, index) in panes" :class="{'active': index === activeIndex}">
 						<a href="javascript:void(0)"
@@ -44,6 +44,10 @@ export default {
     affixNavHeight: {
       type: String,
       default: '30px'
+    },
+    position: {
+      type: String,
+      default: 'horizontal'
     }
   },
   data () {
@@ -62,10 +66,14 @@ export default {
       affixHeight: 0,
       container: null,
       actualOffsetTop: 0,
-      pure: false
+      pure: true
     }
   },
-  watch: {},
+  watch: {
+    panes (val) {
+      val.length < 1 ? this.pure = true : this.pure = false
+    }
+  },
   computed: {
     distance () {
       // 当正好处于某个content位置时，content应与窗口顶部相隔distance距离，以便留给affix展示
@@ -226,14 +234,12 @@ export default {
       me.actualOffsetTop = me.overScroll ? Math.min(affixNavPosition.top, (me.initOffsetTop + affixPosition.top)) : Math.min(me.initOffsetTop, affixNavPosition.top)
       // flag为到达刚好从affix-top转变为affix时，滚动条卷去的距离
       me.flag = affixNavPosition.top - me.actualOffsetTop
-      me.pure = me.panes.length < 1
     })
   }
 }
 </script>
 
 <style lang="less" scoped>
-// 在为pure时，.affix-nav的justify-content为center ~ less变量@
 // 设置几个背景颜色主题
 .affix-container {
     position: relative;
@@ -267,9 +273,9 @@ export default {
             &:hover {
                 background-color: #eeeeee;
             }
-			&:last-child {
-	            border-right: none;
-	        }
+            &:last-child {
+                border-right: none;
+            }
         }
         .active {
             color: #fff;

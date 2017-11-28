@@ -45,9 +45,9 @@ export default {
       type: String,
       default: '30px'
     },
-    position: {
-      type: String,
-      default: 'horizontal'
+    pure: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -65,14 +65,10 @@ export default {
       },
       affixHeight: 0,
       container: null,
-      actualOffsetTop: 0,
-      pure: true
+      actualOffsetTop: 0
     }
   },
   watch: {
-    panes (val) {
-      val.length < 1 ? this.pure = true : this.pure = false
-    }
   },
   computed: {
     distance () {

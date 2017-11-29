@@ -39,7 +39,7 @@ export default {
     },
     affixNavWidth: {
       type: String,
-      default: '100%'
+      default: '70%'
     },
     affixNavHeight: {
       type: String,
@@ -65,7 +65,8 @@ export default {
       },
       affixHeight: 0,
       container: null,
-      actualOffsetTop: 0
+      actualOffsetTop: 0,
+      affixLeft: 0
     }
   },
   watch: {
@@ -218,6 +219,7 @@ export default {
   mounted: function () {
     const me = this
     this.$nextTick(() => {
+      debugger
       me.affixNavSize = {
         height: me.$refs.affixNav ? me.$refs.affixNav.offsetHeight : 0,
         width: me.$refs.affixNav ? me.$refs.affixNav.offsetWidth : 0
@@ -230,6 +232,9 @@ export default {
       me.actualOffsetTop = me.overScroll ? Math.min(affixNavPosition.top, (me.initOffsetTop + affixPosition.top)) : Math.min(me.initOffsetTop, affixNavPosition.top)
       // flag为到达刚好从affix-top转变为affix时，滚动条卷去的距离
       me.flag = affixNavPosition.top - me.actualOffsetTop
+      me.affixLeft = affixNavPosition.left
+      // resize而不刷新会导致报错
+      window.addEventListener('resize', () => { window.location.reload() })
     })
   }
 }
@@ -242,12 +247,13 @@ export default {
     .affix-nav {
         padding: 0;
         margin: 0;
-
         display: flex;
         justify-content: space-between;
         align-items: center;
-        position: sticky;
+        position: releative;
+        left: 50%;
         top: 10px;
+        transform: translateX(-50%);
         background-color: #fff;
         z-index: 999999;
         color: #337ab7;
@@ -279,7 +285,7 @@ export default {
         }
     }
     .affix-top {
-        position: static;
+        position: relative;
     }
     .affix-ing {
         position: fixed;

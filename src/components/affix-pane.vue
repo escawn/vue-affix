@@ -30,6 +30,5 @@ export default {
 .content {
 	border-top: 1px solid #ddd;
 	padding: 20px;
-	width: 300px;
 }
 </style>

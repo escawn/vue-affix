@@ -69,12 +69,13 @@ export default {
       affixLeft: 0
     }
   },
-  watch: {
-  },
+  watch: {},
   computed: {
     distance () {
       // 当正好处于某个content位置时，content应与窗口顶部相隔distance距离，以便留给affix展示
-      return this.actualOffsetTop + this.affixNavSize.height + this.elementDistance
+      return (
+        this.actualOffsetTop + this.affixNavSize.height + this.elementDistance
+      )
     },
     // 判断是否支持sticky属性
     isSupportSticky () {
@@ -91,6 +92,28 @@ export default {
     }
   },
   methods: {
+    initAffix () {
+      const me = this
+      me.affixNavSize = {
+        height: me.$refs.affixNav ? me.$refs.affixNav.offsetHeight : 0,
+        width: me.$refs.affixNav ? me.$refs.affixNav.offsetWidth : 0
+      }
+      me.affixHeight = me.$refs.affix.offsetHeight
+      me.container = me.overScroll ? me.$refs.affix : window
+      me.container.addEventListener('scroll', me.scrollListener)
+      let affixNavPosition = me.getPosition(
+        me.pure ? me.$refs.affixNav : me.$refs.affix
+      )
+      let affixPosition = me.getPosition(me.$refs.affix)
+      me.actualOffsetTop = me.overScroll
+        ? Math.min(affixNavPosition.top, me.initOffsetTop + affixPosition.top)
+        : Math.min(me.initOffsetTop, affixNavPosition.top)
+      // flag为到达刚好从affix-top转变为affix时，滚动条卷去的距离
+      me.flag = affixNavPosition.top - me.actualOffsetTop
+      me.affixLeft = affixNavPosition.left
+      // resize而不刷新会导致报错
+      window.addEventListener('resize', me.throttle(me.initAffix, 2000))
+    },
     // 获取元素顶部与文档之间距离
     getPosition (el) {
       if (el) {
@@ -98,8 +121,8 @@ export default {
         let actualTop = el.offsetTop
         let current = el.offsetParent
         while (current !== document.body && current !== null) {
-          actualLeft += (current.offsetLeft + current.clientLeft)
-          actualTop += (current.offsetTop + current.clientTop)
+          actualLeft += current.offsetLeft + current.clientLeft
+          actualTop += current.offsetTop + current.clientTop
           current = current.offsetParent
         }
         return {
@@ -116,7 +139,11 @@ export default {
     // 获取Affix状态
     getAffixState (top) {
       if (this.affixState === 'affix-top') {
-        if (this.actualOffsetTop !== null && this.$refs.affixNav.getBoundingClientRect().top >= this.actualOffsetTop) {
+        if (
+          this.actualOffsetTop !== null &&
+          this.$refs.affixNav.getBoundingClientRect().top >=
+            this.actualOffsetTop
+        ) {
           return 'affix-top'
         } else {
           return 'affix-ing'
@@ -137,7 +164,10 @@ export default {
         top = me.container.scrollTop
       } else {
         // 不同浏览器内核下scrolltop取值方式不同
-        top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
+        top =
+          document.documentElement.scrollTop ||
+          window.pageYOffset ||
+          document.body.scrollTop
       }
       // 兼容无affix-pane情况
       if (!me.pure) {
@@ -174,7 +204,9 @@ export default {
         this.activeIndex = index
         // 此处暴露一个点击事件
         this.$emit('click-prescroll', index)
-        const newScrollTop = Math.round(me.getPosition(this.panes[index].$refs.content).top - this.distance)
+        const newScrollTop = Math.round(
+          me.getPosition(this.panes[index].$refs.content).top - this.distance
+        )
         if (me.isSmoothScroll) {
           me.smoothScroll(newScrollTop, index)
         } else {
@@ -193,19 +225,30 @@ export default {
         top = me.container.scrollTop
       } else {
         // 不同浏览器内核下scrolltop取值方式不同
-        top = document.documentElement.scrollTop || window.pageYOffset || document.body.scrollTop
+        top =
+          document.documentElement.scrollTop ||
+          window.pageYOffset ||
+          document.body.scrollTop
       }
       top = Math.round(top)
       target = Math.round(target)
       if (target - top > 50) {
-        me.overScroll ? me.container.scrollTop = top + 50 : window.scrollTo(0, top + 50)
+        me.overScroll
+          ? (me.container.scrollTop = top + 50)
+          : window.scrollTo(0, top + 50)
       } else if (top - target > 50) {
-        me.overScroll ? me.container.scrollTop = top - 50 : window.scrollTo(0, top - 50)
+        me.overScroll
+          ? (me.container.scrollTop = top - 50)
+          : window.scrollTo(0, top - 50)
       } else {
-        me.overScroll ? me.container.scrollTop = target : window.scrollTo(0, target)
+        me.overScroll
+          ? (me.container.scrollTop = target)
+          : window.scrollTo(0, target)
       }
       if (Math.abs(target - top) > 1) {
-        me.animationFrameFlag = window.requestAnimationFrame(() => { me.smoothScroll(target) })
+        me.animationFrameFlag = window.requestAnimationFrame(() => {
+          me.smoothScroll(target)
+        })
       } else {
         window.cancelAnimationFrame(me.animationFrameFlag)
         me.container.addEventListener('scroll', me.scrollListener)
@@ -214,27 +257,27 @@ export default {
       if (!me.isSupportSticky) {
         me.affixState = me.getAffixState(top)
       }
+    },
+    throttle (func, delay) {
+      let deferTimer = null
+      let lastTime = 0
+      return function () {
+        const self = this
+        const args = arguments
+        const currTime = new Date().getTime()
+        clearTimeout(deferTimer)
+        if (currTime - lastTime >= delay) {
+          lastTime = currTime
+          func.apply(self, args)
+        } else {
+          deferTimer = setTimeout(() => {}, delay)
+        }
+      }
     }
   },
   mounted: function () {
-    const me = this
     this.$nextTick(() => {
-      debugger
-      me.affixNavSize = {
-        height: me.$refs.affixNav ? me.$refs.affixNav.offsetHeight : 0,
-        width: me.$refs.affixNav ? me.$refs.affixNav.offsetWidth : 0
-      }
-      me.affixHeight = me.$refs.affix.offsetHeight
-      me.container = me.overScroll ? me.$refs.affix : window
-      me.container.addEventListener('scroll', me.scrollListener)
-      let affixNavPosition = me.getPosition(me.pure ? me.$refs.affixNav : me.$refs.affix)
-      let affixPosition = me.getPosition(me.$refs.affix)
-      me.actualOffsetTop = me.overScroll ? Math.min(affixNavPosition.top, (me.initOffsetTop + affixPosition.top)) : Math.min(me.initOffsetTop, affixNavPosition.top)
-      // flag为到达刚好从affix-top转变为affix时，滚动条卷去的距离
-      me.flag = affixNavPosition.top - me.actualOffsetTop
-      me.affixLeft = affixNavPosition.left
-      // resize而不刷新会导致报错
-      window.addEventListener('resize', () => { window.location.reload() })
+      this.initAffix()
     })
   }
 }
@@ -243,58 +286,58 @@ export default {
 <style lang="less" scoped>
 // 设置几个背景颜色主题
 .affix-container {
-    position: relative;
-    .affix-nav {
-        padding: 0;
-        margin: 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: releative;
-        left: 50%;
-        top: 10px;
-        transform: translateX(-50%);
-        background-color: #fff;
-        z-index: 999999;
+  position: relative;
+  .affix-nav {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: releative;
+    left: 50%;
+    top: 10px;
+    transform: translateX(-50%);
+    background-color: #fff;
+    z-index: 999999;
+    color: #337ab7;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    li {
+      border-right: 1px solid #ddd;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      border-right: 1px solid #ddd;
+      a {
         color: #337ab7;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        li {
-            border-right: 1px solid #ddd;
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            border-right: 1px solid #ddd;
-            a {
-                color: #337ab7;
-                text-decoration: none;
-                vertical-align: -webkit-baseline-middle;
-            }
-            &:hover {
-                background-color: #eeeeee;
-            }
-            &:last-child {
-                border-right: none;
-            }
-        }
-        .active {
-            color: #fff;
-            background-color: #eeeeee;
-        }
+        text-decoration: none;
+        vertical-align: -webkit-baseline-middle;
+      }
+      &:hover {
+        background-color: #eeeeee;
+      }
+      &:last-child {
+        border-right: none;
+      }
     }
-    .affix-top {
-        position: relative;
+    .active {
+      color: #fff;
+      background-color: #eeeeee;
     }
-    .affix-ing {
-        position: fixed;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.067);
-    }
+  }
+  .affix-top {
+    position: relative;
+  }
+  .affix-ing {
+    position: fixed;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.067);
+  }
 }
 .affix-content {
-    padding-top: 60px;
-    scroll-behavior: smooth;
-    overflow-y: scroll;
+  padding-top: 60px;
+  scroll-behavior: smooth;
+  overflow-y: scroll;
 }
 </style>

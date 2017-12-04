@@ -6,10 +6,17 @@
     </header>
     <affix>
       <affix-pane :label="'基础用法'">
-        111
+        <div class="pane">
+          <div class="pane-header"></div>
+          <div class="pane-body"></div>
+        </div>
       </affix-pane>
-      <affix-pane :label="'进阶用法'">222</affix-pane>
-      <affix-pane :label="'后续feature'">333</affix-pane>
+      <affix-pane :label="'进阶用法'">
+
+      </affix-pane>
+      <affix-pane :label="'后续feature'">
+
+      </affix-pane>
     </affix>
   </div>
 </template>
